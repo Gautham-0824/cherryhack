@@ -7,7 +7,7 @@
  * Format output based on intent type
  * Enforces strict formatting rules
  */
-function formatOutput(result, intentType) {
+function formatOutput(result, intentType, metadata = {}) {
   if (!result) {
     return 'Unable to answer.';
   }
@@ -21,7 +21,7 @@ function formatOutput(result, intentType) {
   // Apply intent-specific formatting
   switch (intentType) {
     case 'math':
-      return formatMathOutput(output);
+      return formatMathOutput(output, metadata.operation);
     
     case 'string':
       return formatStringOutput(output);
@@ -41,8 +41,8 @@ function formatOutput(result, intentType) {
  * Clean output by removing common unwanted patterns
  */
 function cleanOutput(text) {
-  // Remove common prefixes
-  text = text.replace(/^(the answer is|the result is|it is|this is|answer:|result:)\s*/i, '');
+  // Remove common prefixes so the formatter can apply the correct label
+  text = text.replace(/^(the answer is|the result is|the sum is|the difference is|the product is|the quotient is|it is|this is|answer:|result:)\s*/i, '');
   
   // Remove trailing punctuation if it's excessive
   text = text.replace(/\.{2,}$/, '.');
@@ -56,22 +56,36 @@ function cleanOutput(text) {
 }
 
 /**
- * Format math results
+ * Map math operation to its result label
  */
-function formatMathOutput(output) {
+const MATH_LABELS = {
+  add:      'sum',
+  subtract: 'difference',
+  multiply: 'product',
+  divide:   'quotient'
+};
+
+/**
+ * Format math results using operation-specific labels
+ * e.g. "The sum is 45."  "The product is 56."
+ */
+function formatMathOutput(output, operation) {
+  // Resolve label: use operation-specific word, fall back to generic "result"
+  const label = MATH_LABELS[operation] || 'result';
+
   // Check if it's a pure number
   const numMatch = output.match(/^-?\d+(\.\d+)?\.?$/);
   if (numMatch) {
     const num = parseFloat(output);
-    return `The answer is ${num}.`;
+    return `The ${label} is ${num}.`;
   }
 
-  // If already formatted, return as is
+  // If already formatted with a label, return as-is
   if (output.startsWith('The')) {
     return output;
   }
 
-  return `The answer is ${output}`;
+  return `The ${label} is ${output}.`;
 }
 
 /**

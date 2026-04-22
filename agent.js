@@ -68,7 +68,12 @@ async function processQuery(query) {
     }
 
     // Step 5: Format output strictly
-    const formattedOutput = formatOutput(state.result, state.intent.type);
+    // Pass math operation so formatter can use the right label (sum, difference, etc.)
+    const formattedOutput = formatOutput(
+      state.result,
+      state.intent.type,
+      state.intent.metadata
+    );
 
     return formattedOutput;
 
