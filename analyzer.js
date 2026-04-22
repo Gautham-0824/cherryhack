@@ -112,6 +112,7 @@ function isStringQuery(query) {
 
 /**
  * Extract string operation details
+ * Handles quoted strings, "the word X", "the string X", or bare last word
  */
 function extractStringMetadata(query) {
   const metadata = {
@@ -121,37 +122,48 @@ function extractStringMetadata(query) {
 
   const lowerQuery = query.toLowerCase();
 
+  // Helper: extract the target string from the query
+  // Priority: quoted > "the word/string X" pattern > last meaningful word
+  function extractTarget(q) {
+    // 1. Quoted string
+    const quoteMatch = q.match(/["']([^"']+)["']/);
+    if (quoteMatch) return quoteMatch[1];
+
+    // 2. "the word X" or "the string X" pattern
+    const labelMatch = q.match(/(?:the\s+)?(?:word|string|text|phrase)\s+["']?(\w+)["']?/i);
+    if (labelMatch) return labelMatch[1];
+
+    // 3. Last word in the sentence (most queries end with the target)
+    const words = q.trim().replace(/[?!.]$/, '').split(/\s+/);
+    const stopWords = new Set(['reverse','length','uppercase','lowercase','capitalize',
+      'convert','what','is','the','of','find','get','give','me','string','word','text',
+      'to','in','a','an','please','how','many','characters','long','upper','lower','case']);
+    // Walk from the end, skip stop words
+    for (let i = words.length - 1; i >= 0; i--) {
+      if (!stopWords.has(words[i].toLowerCase())) return words[i];
+    }
+    return null;
+  }
+
   if (lowerQuery.includes('reverse')) {
     metadata.operation = 'reverse';
-    // Extract string in quotes or after "reverse"
-    const quoteMatch = query.match(/["']([^"']+)["']/);
-    if (quoteMatch) {
-      metadata.target = quoteMatch[1];
-    } else {
-      // Try to extract word after reverse
-      const reverseMatch = query.match(/reverse\s+(\w+)/i);
-      if (reverseMatch) {
-        metadata.target = reverseMatch[1];
-      }
-    }
-  } else if (lowerQuery.includes('length')) {
+    metadata.target = extractTarget(query);
+
+  } else if (lowerQuery.includes('length') || lowerQuery.includes('how many characters') || lowerQuery.includes('how long')) {
     metadata.operation = 'length';
-    const quoteMatch = query.match(/["']([^"']+)["']/);
-    if (quoteMatch) {
-      metadata.target = quoteMatch[1];
-    }
-  } else if (lowerQuery.includes('uppercase')) {
+    metadata.target = extractTarget(query);
+
+  } else if (lowerQuery.includes('uppercase') || lowerQuery.includes('upper case') || lowerQuery.includes('to upper')) {
     metadata.operation = 'uppercase';
-    const quoteMatch = query.match(/["']([^"']+)["']/);
-    if (quoteMatch) {
-      metadata.target = quoteMatch[1];
-    }
-  } else if (lowerQuery.includes('lowercase')) {
+    metadata.target = extractTarget(query);
+
+  } else if (lowerQuery.includes('lowercase') || lowerQuery.includes('lower case') || lowerQuery.includes('to lower')) {
     metadata.operation = 'lowercase';
-    const quoteMatch = query.match(/["']([^"']+)["']/);
-    if (quoteMatch) {
-      metadata.target = quoteMatch[1];
-    }
+    metadata.target = extractTarget(query);
+
+  } else if (lowerQuery.includes('capitalize')) {
+    metadata.operation = 'capitalize';
+    metadata.target = extractTarget(query);
   }
 
   return metadata;
