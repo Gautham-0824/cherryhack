@@ -54,7 +54,7 @@ function isMathQuery(query) {
   ];
 
   const hasNumbers = /\d+/.test(query);
-  const hasMathSymbols = /[\+\-\*\/\=]/.test(query);
+  const hasMathSymbols = /[\+\-\*\/\=\×\÷]/.test(query) || /\d\s*[xX×]\s*\d/.test(query);
   const hasMathKeywords = mathKeywords.some(keyword => query.includes(keyword));
 
   return (hasNumbers && hasMathSymbols) || (hasNumbers && hasMathKeywords);
@@ -89,7 +89,7 @@ function extractMathMetadata(query) {
     metadata.operation = 'add';
   } else if (query.includes('-')) {
     metadata.operation = 'subtract';
-  } else if (query.includes('*') || query.includes('×')) {
+  } else if (query.includes('*') || query.includes('×') || /\d\s*[xX×]\s*\d/.test(query)) {
     metadata.operation = 'multiply';
   } else if (query.includes('/') || query.includes('÷')) {
     metadata.operation = 'divide';

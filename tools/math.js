@@ -72,15 +72,19 @@ function execute(query, metadata) {
 /**
  * Evaluate mathematical expression safely
  * Uses regex parsing instead of eval()
+ * Supports: +  -  *  /  x  ×  ÷
  */
 function evaluateExpression(expr) {
   try {
-    // Remove whitespace
+    // Normalise: replace 'x' between digits and '×' / '÷' with standard symbols
+    expr = expr.replace(/(\d)\s*[xX×]\s*(\d)/g, '$1*$2');
+    expr = expr.replace(/÷/g, '/');
+
+    // Remove remaining whitespace
     expr = expr.replace(/\s+/g, '');
 
-    // Extract simple expression patterns
     // Pattern: number operator number
-    const simplePattern = /(\d+\.?\d*)\s*([\+\-\*\/])\s*(\d+\.?\d*)/;
+    const simplePattern = /(\d+\.?\d*)([\+\-\*\/])(\d+\.?\d*)/;
     const match = expr.match(simplePattern);
 
     if (match) {
