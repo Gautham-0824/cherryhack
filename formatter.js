@@ -52,7 +52,9 @@ const MATH_LABELS = {
   add:      'sum',
   subtract: 'difference',
   multiply: 'product',
-  divide:   'quotient'
+  divide:   'quotient',
+  modulo:   'remainder',
+  exponent: 'power'
 };
 
 function formatMathOutput(output, operation) {

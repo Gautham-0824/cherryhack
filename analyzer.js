@@ -39,11 +39,13 @@ function isMathQuery(query) {
     'subtract', 'minus', 'difference',
     'multiply', 'times', 'product', 'multiplied',
     'divide', 'divided', 'division',
+    'modulo', 'remainder', 'mod',
+    'power', 'exponent', 'raised', 'to the power',
     'calculate', 'compute', 'what is', 'whats'
   ];
 
   const hasNumbers = /\d+/.test(query);
-  const hasMathSymbols = /[\+\-\*\/\×\÷]/.test(query) || /\d\s*[xX×]\s*\d/.test(query);
+  const hasMathSymbols = /[\+\-\*\/\×\÷\%\^]/.test(query) || /\d\s*[xX×]\s*\d/.test(query);
   const hasMathKeywords = mathKeywords.some(keyword => query.includes(keyword));
 
   return (hasNumbers && hasMathSymbols) || (hasNumbers && hasMathKeywords);
@@ -72,6 +74,10 @@ function extractMathMetadata(query) {
     metadata.operation = 'multiply';
   } else if (lowerQuery.includes('divide') || lowerQuery.includes('divided') || lowerQuery.includes('division')) {
     metadata.operation = 'divide';
+  } else if (lowerQuery.includes('modulo') || lowerQuery.includes('remainder') || lowerQuery.includes(' mod ')) {
+    metadata.operation = 'modulo';
+  } else if (lowerQuery.includes('power') || lowerQuery.includes('exponent') || lowerQuery.includes('raised') || lowerQuery.includes('to the power')) {
+    metadata.operation = 'exponent';
   }
   // Symbol-based detection
   else if (query.includes('+')) {
@@ -83,6 +89,10 @@ function extractMathMetadata(query) {
     metadata.operation = 'multiply';
   } else if (query.includes('/') || query.includes('÷')) {
     metadata.operation = 'divide';
+  } else if (query.includes('%')) {
+    metadata.operation = 'modulo';
+  } else if (query.includes('^') || query.includes('**')) {
+    metadata.operation = 'exponent';
   }
 
   return metadata;

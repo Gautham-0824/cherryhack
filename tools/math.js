@@ -43,6 +43,23 @@ function execute(query, metadata) {
         result = numbers[0] / numbers[1];
         break;
 
+      case 'modulo':
+        if (numbers.length < 2) {
+          return { success: false, error: 'Need at least 2 numbers' };
+        }
+        if (numbers[1] === 0) {
+          return { success: false, error: 'Modulo by zero' };
+        }
+        result = numbers[0] % numbers[1];
+        break;
+
+      case 'exponent':
+        if (numbers.length < 2) {
+          return { success: false, error: 'Need at least 2 numbers' };
+        }
+        result = Math.pow(numbers[0], numbers[1]);
+        break;
+
       default:
         // Try to evaluate as expression
         result = evaluateExpression(query);
