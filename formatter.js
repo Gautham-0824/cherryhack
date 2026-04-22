@@ -49,12 +49,13 @@ function ensurePeriod(text) {
 }
 
 const MATH_LABELS = {
-  add:      'sum',
-  subtract: 'difference',
-  multiply: 'product',
-  divide:   'quotient',
-  modulo:   'remainder',
-  exponent: 'power'
+  add:          'sum',
+  subtract:     'difference',
+  multiply:     'product',
+  divide:       'quotient',
+  floor_divide: 'quotient',
+  modulo:       'remainder',
+  exponent:     'power'
 };
 
 function formatMathOutput(output, operation) {

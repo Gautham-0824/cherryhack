@@ -39,13 +39,14 @@ function isMathQuery(query) {
     'subtract', 'minus', 'difference',
     'multiply', 'times', 'product', 'multiplied',
     'divide', 'divided', 'division',
+    'floor division', 'integer division',
     'modulo', 'remainder', 'mod',
     'power', 'exponent', 'raised', 'to the power',
     'calculate', 'compute', 'what is', 'whats'
   ];
 
   const hasNumbers = /\d+/.test(query);
-  const hasMathSymbols = /[\+\-\*\/\×\÷\%\^]/.test(query) || /\d\s*[xX×]\s*\d/.test(query);
+  const hasMathSymbols = /[\+\-\*\/\×\÷\%\^]/.test(query) || /\/\//.test(query) || /\d\s*[xX×]\s*\d/.test(query);
   const hasMathKeywords = mathKeywords.some(keyword => query.includes(keyword));
 
   return (hasNumbers && hasMathSymbols) || (hasNumbers && hasMathKeywords);
@@ -72,6 +73,8 @@ function extractMathMetadata(query) {
     metadata.operation = 'subtract';
   } else if (lowerQuery.includes('multiply') || lowerQuery.includes('multiplied') || lowerQuery.includes('times') || lowerQuery.includes('product')) {
     metadata.operation = 'multiply';
+  } else if (lowerQuery.includes('floor division') || lowerQuery.includes('integer division')) {
+    metadata.operation = 'floor_divide';
   } else if (lowerQuery.includes('divide') || lowerQuery.includes('divided') || lowerQuery.includes('division')) {
     metadata.operation = 'divide';
   } else if (lowerQuery.includes('modulo') || lowerQuery.includes('remainder') || lowerQuery.includes(' mod ')) {
@@ -79,8 +82,10 @@ function extractMathMetadata(query) {
   } else if (lowerQuery.includes('power') || lowerQuery.includes('exponent') || lowerQuery.includes('raised') || lowerQuery.includes('to the power')) {
     metadata.operation = 'exponent';
   }
-  // Symbol-based detection
-  else if (query.includes('+')) {
+  // Symbol-based detection (check // before / to avoid false match)
+  else if (query.includes('//')) {
+    metadata.operation = 'floor_divide';
+  } else if (query.includes('+')) {
     metadata.operation = 'add';
   } else if (/\d\s*-\s*\d/.test(query)) {
     // Only treat '-' as subtraction if it's between two numbers
