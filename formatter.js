@@ -55,7 +55,11 @@ const MATH_LABELS = {
   divide:       'quotient',
   floor_divide: 'quotient',
   modulo:       'remainder',
-  exponent:     'power'
+  exponent:     'power',
+  sqrt:         'square root',
+  abs:          'absolute value',
+  factorial:    'factorial',
+  log:          'logarithm'
 };
 
 function formatMathOutput(output, operation) {
@@ -65,43 +69,43 @@ function formatMathOutput(output, operation) {
   // Pure number
   if (/^-?\d+(\.\d+)?$/.test(stripped)) {
     const num = parseFloat(stripped);
-    return `The ${label} is ${num}.`;
+    return `The ${label} is ${num}`;
   }
 
   // Already a complete sentence
-  if (/^The \w+ is .+\.$/.test(output)) return output;
+  if (/^The \w+ is .+$/.test(output)) return output.replace(/\.$/, '');
 
-  return `The ${label} is ${stripped}.`;
+  return `The ${label} is ${stripped}`;
 }
 
 function formatStringOutput(output, operation) {
   const stripped = output.replace(/\.$/, '').trim();
 
   if (operation === 'length' && /^\d+$/.test(stripped)) {
-    return `The length is ${stripped}.`;
+    return `The length is ${stripped}`;
   }
-  if (/^The .+ is .+\.$/.test(output)) return output;
-  if (operation === 'reverse') return `The reverse is ${stripped}.`;
-  if (operation === 'uppercase') return `The uppercase is ${stripped}.`;
-  if (operation === 'lowercase') return `The lowercase is ${stripped}.`;
-  if (operation === 'capitalize') return `The capitalized form is ${stripped}.`;
+  if (/^The .+ is .+$/.test(output)) return output.replace(/\.$/, '');
+  if (operation === 'reverse') return `The reverse is ${stripped}`;
+  if (operation === 'uppercase') return `The uppercase is ${stripped}`;
+  if (operation === 'lowercase') return `The lowercase is ${stripped}`;
+  if (operation === 'capitalize') return `The capitalized form is ${stripped}`;
 
-  return `The result is ${stripped}.`;
+  return `The result is ${stripped}`;
 }
 
 function formatLogicOutput(output) {
   const lower = output.toLowerCase().replace(/\.$/, '').trim();
-  if (lower === 'yes' || lower === 'true') return 'Yes.';
-  if (lower === 'no' || lower === 'false') return 'No.';
-  if (output === 'Yes.' || output === 'No.') return output;
-  return ensurePeriod(output);
+  if (lower === 'yes' || lower === 'true') return 'Yes';
+  if (lower === 'no' || lower === 'false') return 'No';
+  if (output === 'Yes' || output === 'No') return output;
+  return output.replace(/\.$/, '');
 }
 
 function formatGeneralOutput(output) {
   const lower = output.toLowerCase().replace(/\.$/, '').trim();
-  if (lower === 'yes') return 'Yes.';
-  if (lower === 'no') return 'No.';
-  return ensurePeriod(output);
+  if (lower === 'yes') return 'Yes';
+  if (lower === 'no') return 'No';
+  return output.replace(/\.$/, '');
 }
 
 module.exports = { formatOutput };

@@ -70,6 +70,44 @@ function execute(query, metadata) {
         result = Math.pow(numbers[0], numbers[1]);
         break;
 
+      case 'sqrt':
+        if (numbers.length < 1) {
+          return { success: false, error: 'Need at least 1 number' };
+        }
+        if (numbers[0] < 0) {
+          return { success: false, error: 'Cannot take square root of negative number' };
+        }
+        result = Math.sqrt(numbers[0]);
+        break;
+
+      case 'abs':
+        if (numbers.length < 1) {
+          return { success: false, error: 'Need at least 1 number' };
+        }
+        result = Math.abs(numbers[0]);
+        break;
+
+      case 'factorial':
+        if (numbers.length < 1) {
+          return { success: false, error: 'Need at least 1 number' };
+        }
+        if (numbers[0] < 0 || !Number.isInteger(numbers[0])) {
+          return { success: false, error: 'Factorial only works for non-negative integers' };
+        }
+        result = factorial(numbers[0]);
+        break;
+
+      case 'log':
+        if (numbers.length < 1) {
+          return { success: false, error: 'Need at least 1 number' };
+        }
+        if (numbers[0] <= 0) {
+          return { success: false, error: 'Logarithm only works for positive numbers' };
+        }
+        // Natural log (ln) by default
+        result = Math.log(numbers[0]);
+        break;
+
       default:
         // Try to evaluate as expression
         result = evaluateExpression(query);
@@ -94,6 +132,18 @@ function execute(query, metadata) {
       error: error.message
     };
   }
+}
+
+/**
+ * Calculate factorial
+ */
+function factorial(n) {
+  if (n === 0 || n === 1) return 1;
+  let result = 1;
+  for (let i = 2; i <= n; i++) {
+    result *= i;
+  }
+  return result;
 }
 
 /**

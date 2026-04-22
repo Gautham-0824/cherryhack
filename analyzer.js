@@ -42,11 +42,15 @@ function isMathQuery(query) {
     'floor division', 'integer division',
     'modulo', 'remainder', 'mod',
     'power', 'exponent', 'raised', 'to the power',
+    'square root', 'sqrt', 'root',
+    'absolute', 'abs',
+    'factorial',
+    'logarithm', 'log', 'ln',
     'calculate', 'compute', 'what is', 'whats'
   ];
 
   const hasNumbers = /\d+/.test(query);
-  const hasMathSymbols = /[\+\-\*\/\×\÷\%\^]/.test(query) || /\/\//.test(query) || /\d\s*[xX×]\s*\d/.test(query);
+  const hasMathSymbols = /[\+\-\*\/\×\÷\%\^√!]/.test(query) || /\/\//.test(query) || /\d\s*[xX×]\s*\d/.test(query);
   const hasMathKeywords = mathKeywords.some(keyword => query.includes(keyword));
 
   return (hasNumbers && hasMathSymbols) || (hasNumbers && hasMathKeywords);
@@ -81,6 +85,14 @@ function extractMathMetadata(query) {
     metadata.operation = 'modulo';
   } else if (lowerQuery.includes('power') || lowerQuery.includes('exponent') || lowerQuery.includes('raised') || lowerQuery.includes('to the power')) {
     metadata.operation = 'exponent';
+  } else if (lowerQuery.includes('square root') || lowerQuery.includes('sqrt') || lowerQuery.includes('root of')) {
+    metadata.operation = 'sqrt';
+  } else if (lowerQuery.includes('absolute') || lowerQuery.includes('abs')) {
+    metadata.operation = 'abs';
+  } else if (lowerQuery.includes('factorial')) {
+    metadata.operation = 'factorial';
+  } else if (lowerQuery.includes('logarithm') || lowerQuery.includes(' log ') || lowerQuery.includes('ln')) {
+    metadata.operation = 'log';
   }
   // Symbol-based detection (check // before / to avoid false match)
   else if (query.includes('//')) {
@@ -98,6 +110,10 @@ function extractMathMetadata(query) {
     metadata.operation = 'modulo';
   } else if (query.includes('^') || query.includes('**')) {
     metadata.operation = 'exponent';
+  } else if (query.includes('√')) {
+    metadata.operation = 'sqrt';
+  } else if (/\d\s*!/.test(query)) {
+    metadata.operation = 'factorial';
   }
 
   return metadata;
