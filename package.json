@@ -1,0 +1,20 @@
+{
+  "name": "ai-agent-system",
+  "version": "1.0.0",
+  "description": "Production-ready AI agent with tool usage and reasoning",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": ["ai", "agent", "api"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "axios": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
