@@ -12,26 +12,23 @@ const logicTool = require('./tools/logic');
 
 /**
  * Main agent processing function
- * Implements the agent loop: analyze -> decide -> execute -> format
- * @param {string} query - The user query
- * @param {string} assetContext - Text fetched from asset URLs (may be empty)
  */
 async function processQuery(query, assetContext = '') {
   try {
-    // Agent state
     const state = {
-      query: query,
-      assetContext: assetContext,
+      query,
+      assetContext,
       intent: null,
       steps: [],
-      result: null
+      result: null,
+      fromLLM: false
     };
 
-    // Step 1: Analyze query to detect intent
+    // Step 1: Analyze intent
     state.intent = analyzeIntent(query);
     state.steps.push(`Intent detected: ${state.intent.type}`);
 
-    // Step 2: Decide action based on intent
+    // Step 2: Execute appropriate tool
     let toolResult = null;
 
     switch (state.intent.type) {
@@ -51,7 +48,6 @@ async function processQuery(query, assetContext = '') {
         break;
 
       case 'general':
-        // Use reasoning for simple general knowledge
         toolResult = handleGeneralKnowledge(query);
         state.steps.push('Used reasoning module');
         break;
@@ -60,22 +56,23 @@ async function processQuery(query, assetContext = '') {
         toolResult = null;
     }
 
-    // Step 3: Validate result
+    // Step 3: Use tool result or fall back to LLM
     if (toolResult && toolResult.success) {
       state.result = toolResult.answer;
+      state.fromLLM = false;
       state.steps.push('Tool succeeded');
     } else {
-      // Step 4: LLM fallback — include asset context if available
       state.steps.push('Tool failed, using LLM fallback');
       state.result = await callLLM(query, assetContext);
+      state.fromLLM = true;
     }
 
-    // Step 5: Format output strictly
-    // Pass math operation so formatter can use the right label (sum, difference, etc.)
+    // Step 4: Format output — pass fromLLM flag so formatter knows whether to clean
     const formattedOutput = formatOutput(
       state.result,
       state.intent.type,
-      state.intent.metadata
+      state.intent.metadata,
+      state.fromLLM
     );
 
     return formattedOutput;
@@ -88,27 +85,23 @@ async function processQuery(query, assetContext = '') {
 
 /**
  * Reasoning module for simple general knowledge
- * Handles common patterns without LLM
  */
 function handleGeneralKnowledge(query) {
   const lowerQuery = query.toLowerCase();
 
-  // Yes/No questions
-  if (lowerQuery.includes('is') || lowerQuery.includes('are') || lowerQuery.includes('does')) {
-    // Simple heuristics for common questions
-    if (lowerQuery.includes('sky blue')) {
-      return { success: true, answer: 'Yes.' };
-    }
-    if (lowerQuery.includes('water wet')) {
-      return { success: true, answer: 'Yes.' };
-    }
-    if (lowerQuery.includes('sun hot')) {
-      return { success: true, answer: 'Yes.' };
-    }
+  // Yes/No questions - common facts
+  if (lowerQuery.includes('sky') && (lowerQuery.includes('blue') || lowerQuery.includes('color') || lowerQuery.includes('colour'))) {
+    return { success: true, answer: 'Yes.' };
+  }
+  if (lowerQuery.includes('water') && lowerQuery.includes('wet')) {
+    return { success: true, answer: 'Yes.' };
+  }
+  if (lowerQuery.includes('sun') && lowerQuery.includes('hot')) {
+    return { success: true, answer: 'Yes.' };
   }
 
   // Capital questions
-  if (lowerQuery.includes('capital of')) {
+  if (lowerQuery.includes('capital of') || lowerQuery.includes('capital city')) {
     const capitals = {
       'france': 'Paris',
       'germany': 'Berlin',
@@ -121,10 +114,47 @@ function handleGeneralKnowledge(query) {
       'united states': 'Washington D.C.',
       'uk': 'London',
       'united kingdom': 'London',
+      'england': 'London',
       'canada': 'Ottawa',
       'australia': 'Canberra',
       'brazil': 'Brasília',
-      'russia': 'Moscow'
+      'russia': 'Moscow',
+      'mexico': 'Mexico City',
+      'argentina': 'Buenos Aires',
+      'south africa': 'Pretoria',
+      'egypt': 'Cairo',
+      'nigeria': 'Abuja',
+      'kenya': 'Nairobi',
+      'thailand': 'Bangkok',
+      'indonesia': 'Jakarta',
+      'pakistan': 'Islamabad',
+      'bangladesh': 'Dhaka',
+      'south korea': 'Seoul',
+      'north korea': 'Pyongyang',
+      'vietnam': 'Hanoi',
+      'philippines': 'Manila',
+      'malaysia': 'Kuala Lumpur',
+      'singapore': 'Singapore',
+      'new zealand': 'Wellington',
+      'turkey': 'Ankara',
+      'iran': 'Tehran',
+      'iraq': 'Baghdad',
+      'saudi arabia': 'Riyadh',
+      'ukraine': 'Kyiv',
+      'poland': 'Warsaw',
+      'sweden': 'Stockholm',
+      'norway': 'Oslo',
+      'denmark': 'Copenhagen',
+      'finland': 'Helsinki',
+      'netherlands': 'Amsterdam',
+      'belgium': 'Brussels',
+      'switzerland': 'Bern',
+      'austria': 'Vienna',
+      'portugal': 'Lisbon',
+      'greece': 'Athens',
+      'romania': 'Bucharest',
+      'czech republic': 'Prague',
+      'hungary': 'Budapest'
     };
 
     for (const [country, capital] of Object.entries(capitals)) {
@@ -136,15 +166,13 @@ function handleGeneralKnowledge(query) {
 
   // Color questions
   if (lowerQuery.includes('color') || lowerQuery.includes('colour')) {
-    if (lowerQuery.includes('sky')) {
-      return { success: true, answer: 'Blue' };
-    }
-    if (lowerQuery.includes('grass')) {
-      return { success: true, answer: 'Green' };
-    }
-    if (lowerQuery.includes('sun')) {
-      return { success: true, answer: 'Yellow' };
-    }
+    if (lowerQuery.includes('sky')) return { success: true, answer: 'Blue.' };
+    if (lowerQuery.includes('grass')) return { success: true, answer: 'Green.' };
+    if (lowerQuery.includes('sun')) return { success: true, answer: 'Yellow.' };
+    if (lowerQuery.includes('blood')) return { success: true, answer: 'Red.' };
+    if (lowerQuery.includes('snow')) return { success: true, answer: 'White.' };
+    if (lowerQuery.includes('coal') || lowerQuery.includes('night')) return { success: true, answer: 'Black.' };
+    if (lowerQuery.includes('ocean') || lowerQuery.includes('sea')) return { success: true, answer: 'Blue.' };
   }
 
   return { success: false };
