@@ -20,7 +20,7 @@ app.get('/', (req, res) => {
 // Main agent endpoint
 app.post('/v1/answer', async (req, res) => {
   try {
-    const { query } = req.body;
+    const { query, assets } = req.body;
     
     // Validate input
     if (!query || typeof query !== 'string') {
@@ -40,9 +40,18 @@ app.post('/v1/answer', async (req, res) => {
 
     // Log incoming query
     console.log(`[${new Date().toISOString()}] Query: ${sanitizedQuery}`);
+    if (assets && assets.length > 0) {
+      console.log(`[${new Date().toISOString()}] Assets: ${assets.join(', ')}`);
+    }
 
-    // Process through agent
-    const output = await processQuery(sanitizedQuery);
+    // Fetch asset content if URLs are provided
+    let assetContext = '';
+    if (Array.isArray(assets) && assets.length > 0) {
+      assetContext = await fetchAssets(assets);
+    }
+
+    // Process through agent (pass asset context alongside query)
+    const output = await processQuery(sanitizedQuery, assetContext);
 
     // Log response
     console.log(`[${new Date().toISOString()}] Output: ${output}`);
@@ -57,6 +66,45 @@ app.post('/v1/answer', async (req, res) => {
     res.json({ output: 'Unable to answer.' });
   }
 });
+
+/**
+ * Fetch text content from asset URLs
+ * Returns concatenated text to use as context
+ */
+async function fetchAssets(urls) {
+  const axios = require('axios');
+  const results = [];
+
+  for (const url of urls) {
+    try {
+      const response = await axios.get(url, {
+        timeout: 5000,
+        // Accept text content only
+        headers: { 'Accept': 'text/plain, text/html, application/json, */*' },
+        // Limit response size to avoid huge payloads
+        maxContentLength: 50000
+      });
+
+      let content = '';
+      if (typeof response.data === 'string') {
+        // Strip HTML tags if present, keep readable text
+        content = response.data
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .slice(0, 2000); // cap per asset
+      } else if (typeof response.data === 'object') {
+        content = JSON.stringify(response.data).slice(0, 2000);
+      }
+
+      if (content) results.push(content);
+    } catch (err) {
+      console.error(`Failed to fetch asset ${url}: ${err.message}`);
+    }
+  }
+
+  return results.join('\n\n');
+}
 
 // 404 handler
 app.use((req, res) => {

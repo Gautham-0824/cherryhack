@@ -8,9 +8,11 @@ const axios = require('axios');
 
 /**
  * Call LLM as fallback
- * This is a placeholder - integrate with your preferred LLM API
+ * Only used when deterministic tools fail
+ * @param {string} query - The user query
+ * @param {string} assetContext - Text fetched from asset URLs (may be empty)
  */
-async function callLLM(query) {
+async function callLLM(query, assetContext = '') {
   try {
     // Check if API key is available
     const apiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY;
@@ -20,11 +22,16 @@ async function callLLM(query) {
       return generateFallbackResponse(query);
     }
 
+    // Build the full prompt — prepend asset context if present
+    const fullQuery = assetContext
+      ? `Context:\n${assetContext}\n\nQuestion: ${query}`
+      : query;
+
     // Determine which API to use
     if (process.env.OPENAI_API_KEY) {
-      return await callOpenAI(query);
+      return await callOpenAI(fullQuery);
     } else if (process.env.ANTHROPIC_API_KEY) {
-      return await callAnthropic(query);
+      return await callAnthropic(fullQuery);
     }
 
     return generateFallbackResponse(query);
@@ -39,14 +46,14 @@ async function callLLM(query) {
  * Call OpenAI API
  */
 async function callOpenAI(query) {
-  const systemPrompt = `You are a precise answer bot. Rules:
-1. Provide ONLY the direct answer
-2. NO explanations or extra text
-3. Keep responses under 10 words
-4. Use consistent phrasing
-5. For yes/no questions, answer only "Yes." or "No."
-6. For numerical answers, use format "The answer is X."
-7. For factual answers, state the fact directly`;
+  const systemPrompt = `You are a precise answer bot. Strict rules:
+1. Provide ONLY the direct answer — no explanations, no extra text
+2. Keep responses under 15 words
+3. For yes/no questions answer only: Yes. or No.
+4. For math: "The sum is X." / "The difference is X." / "The product is X." / "The quotient is X."
+5. For factual/general questions state the fact directly as a short sentence ending with a period
+6. If context is provided, use it to answer the question
+7. Never say "I don't know" — give your best short answer`;
 
   try {
     const response = await axios.post(
@@ -79,7 +86,14 @@ async function callOpenAI(query) {
  * Call Anthropic API
  */
 async function callAnthropic(query) {
-  const systemPrompt = `You are a precise answer bot. Provide ONLY direct answers with NO explanations. Keep responses under 10 words. For yes/no questions, answer only "Yes." or "No."`;
+  const systemPrompt = `You are a precise answer bot. Strict rules:
+1. Provide ONLY the direct answer — no explanations, no extra text
+2. Keep responses under 15 words
+3. For yes/no questions answer only: Yes. or No.
+4. For math: "The sum is X." / "The difference is X." / "The product is X." / "The quotient is X."
+5. For factual/general questions state the fact directly as a short sentence ending with a period
+6. If context is provided, use it to answer the question
+7. Never say "I don't know" — give your best short answer`;
 
   try {
     const response = await axios.post(

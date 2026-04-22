@@ -13,12 +13,15 @@ const logicTool = require('./tools/logic');
 /**
  * Main agent processing function
  * Implements the agent loop: analyze -> decide -> execute -> format
+ * @param {string} query - The user query
+ * @param {string} assetContext - Text fetched from asset URLs (may be empty)
  */
-async function processQuery(query) {
+async function processQuery(query, assetContext = '') {
   try {
     // Agent state
     const state = {
       query: query,
+      assetContext: assetContext,
       intent: null,
       steps: [],
       result: null
@@ -62,9 +65,9 @@ async function processQuery(query) {
       state.result = toolResult.answer;
       state.steps.push('Tool succeeded');
     } else {
-      // Step 4: LLM fallback
+      // Step 4: LLM fallback — include asset context if available
       state.steps.push('Tool failed, using LLM fallback');
-      state.result = await callLLM(query);
+      state.result = await callLLM(query, assetContext);
     }
 
     // Step 5: Format output strictly
